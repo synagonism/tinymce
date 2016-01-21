@@ -128,6 +128,18 @@ test("Paste Word fake list before BR", function() {
 	equal(editor.getContent(), '<ul><li>Item 1</li><li>Item 2</li><li>Item 3</li><li>Item 4</li><li>Item 5</li><li>Item 6</li></ul><p><br />a</p>');
 });
 
+test("Paste Word fake lists interrupted by header", function() {
+	var rng = editor.dom.createRng();
+
+	editor.setContent('<p>1234</p>');
+	rng.setStart(editor.getBody().firstChild.firstChild, 0);
+	rng.setEnd(editor.getBody().firstChild.firstChild, 4);
+	editor.selection.setRng(rng);
+
+	editor.execCommand('mceInsertClipboardContent', false, {content: '<p class=MsoListParagraphCxSpFirst style=\'text-indent:-.25in;mso-list:l0 level1 lfo1\'><![if !supportLists]><span style=\'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family: Symbol\'><span style=\'mso-list:Ignore\'>·<span style=\'font:7.0pt "Times New Roman"\'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>List before heading A<o:p></o:p></p>  <p class=MsoListParagraphCxSpLast style=\'text-indent:-.25in;mso-list:l0 level1 lfo1\'><![if !supportLists]><span style=\'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family: Symbol\'><span style=\'mso-list:Ignore\'>·<span style=\'font:7.0pt "Times New Roman"\'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>List before heading B<o:p></o:p></p>  <h1>heading<o:p></o:p></h1>  <p class=MsoListParagraphCxSpFirst style=\'text-indent:-.25in;mso-list:l0 level1 lfo1\'><![if !supportLists]><span style=\'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family: Symbol\'><span style=\'mso-list:Ignore\'>·<span style=\'font:7.0pt "Times New Roman"\'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>List after heading A<o:p></o:p></p>  <p class=MsoListParagraphCxSpLast style=\'text-indent:-.25in;mso-list:l0 level1 lfo1\'><![if !supportLists]><span style=\'font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family: Symbol\'><span style=\'mso-list:Ignore\'>·<span style=\'font:7.0pt "Times New Roman"\'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></span></span><![endif]>List after heading B<o:p></o:p></p>'});
+	equal(editor.getContent(), '<ul><li>List before heading A</li><li>List before heading B</li></ul><h1>heading</h1><ul><li>List after heading A</li><li>List after heading B</li></ul>');
+});
+
 test("Paste list like paragraph and list", function() {
 	editor.setContent('');
 
@@ -136,6 +148,20 @@ test("Paste list like paragraph and list", function() {
 	});
 
 	equal(editor.getContent(), '<p>ABC. X</p><ol><li>Y</li></ol>');
+});
+
+test("Paste list like paragraph and list (disabled)", function() {
+	editor.setContent('');
+
+	editor.settings.paste_convert_word_fake_lists = false;
+
+	editor.execCommand('mceInsertClipboardContent', false, {
+		content: '<p class=MsoNormal><span style=\'font-size:10.0pt;line-height:115%;font-family:"Trebuchet MS","sans-serif";color:#666666\'>ABC. X<o:p></o:p></span></p><p class=MsoListParagraph style=\'text-indent:-.25in;mso-list:l0 level1 lfo1\'><![if !supportLists]><span style=\'mso-fareast-font-family:Calibri;mso-fareast-theme-font:minor-latin;mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin\'><span style=\'mso-list:Ignore\'>1.<span style=\'font:7.0pt "Times New Roman"\'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span><![endif]>Y</p>'
+	});
+
+	delete editor.settings.paste_convert_word_fake_lists;
+
+	equal(editor.getContent(), '<p>ABC. X</p><p>1.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Y</p>');
 });
 
 test("Paste Word table", function() {
@@ -162,7 +188,7 @@ test("Paste Office 365", function() {
 	equal(editor.getContent(), '<p>Test</p>');
 });
 
-test("Paste Google Docs", function() {
+test("Paste Google Docs 1", function() {
 	var rng = editor.dom.createRng();
 
 	editor.setContent('<p>1234</p>');
@@ -172,6 +198,28 @@ test("Paste Google Docs", function() {
 
 	editor.execCommand('mceInsertClipboardContent', false, {content: '<span id="docs-internal-guid-94e46f1a-1c88-b42b-d502-1d19da30dde7"></span><p dir="ltr>Test</p>'});
 	equal(editor.getContent(), '<p>Test</p>');
+});
+
+test("Paste Google Docs 2", function() {
+	var rng = editor.dom.createRng();
+
+	editor.setContent('<p>1234</p>');
+	rng.setStart(editor.getBody().firstChild.firstChild, 0);
+	rng.setEnd(editor.getBody().firstChild.firstChild, 4);
+	editor.selection.setRng(rng);
+
+	editor.execCommand('mceInsertClipboardContent', false, {
+		content: (
+			'<meta charset="utf-8">' +
+			'<b style="font-weight:normal;" id="docs-internal-guid-adeb6845-fec6-72e6-6831-5e3ce002727c">' +
+			'<p dir="ltr">a</p>' +
+			'<p dir="ltr">b</p>' +
+			'<p dir="ltr">c</p>' +
+			'</b>' +
+			'<br class="Apple-interchange-newline">'
+		)
+	});
+	equal(editor.getContent(), '<p>a</p><p>b</p><p>c</p>');
 });
 
 test("Paste Word without mso markings", function() {
@@ -279,7 +327,7 @@ test('paste track changes comment', function() {
 
 	equal(editor.getContent(), '<p>1</p>');
 });
-	
+
 test('paste nested (UL) word list', function() {
 	editor.setContent('');
 
@@ -302,7 +350,7 @@ test('paste nested (UL) word list', function() {
 
 	equal(
 		editor.getContent(),
-		'<ul>'+
+		'<ul>' +
 			'<li>a' +
 				'<ul>' +
 					'<li>b' +
@@ -334,7 +382,7 @@ test('paste nested (OL) word list', function() {
 			"<![if !supportLists]><span style='mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin'><span style='mso-list:Ignore'>" +
 			"<span style='font:7.0pt \"Times New Roman\"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
 			"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-			"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + 
+			"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
 			"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>i.<span style='font:7.0pt \"Times New Roman\"'>" +
 			"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></span><![endif]>c</p>"
 		)
@@ -342,7 +390,7 @@ test('paste nested (OL) word list', function() {
 
 	equal(
 		editor.getContent(),
-		'<ol>'+
+		'<ol>' +
 			'<li>a' +
 				'<ol>' +
 					'<li>b' +
@@ -354,6 +402,22 @@ test('paste nested (OL) word list', function() {
 			'</li>' +
 		'</ol>'
 	);
+});
+
+test("Paste list start index", function() {
+	editor.settings.paste_merge_formats = true;
+
+	editor.setContent('');
+
+	editor.execCommand('mceInsertClipboardContent', false, {
+		content: (
+			'<p class=MsoListParagraphCxSpMiddle style="text-indent:-18.0pt;mso-list:l0 level1 lfo1">' +
+			'<![if !supportLists]><span style="mso-fareast-font-family:Calibri;mso-fareast-theme-font:minor-latin;' +
+			'mso-bidi-font-family:Calibri;mso-bidi-theme-font:minor-latin"><span style="mso-list:Ignore">10.' +
+			'<span style="font:7.0pt Times>&nbsp;&nbsp;</span></span></span><![endif]>J<o:p></o:p></p>'
+		)
+	});
+	equal(editor.getContent(), '<ol start="10"><li>J</li></ol>');
 });
 
 test("Paste paste_merge_formats: true", function() {
@@ -470,10 +534,10 @@ test('paste plain text with paragraphs', function() {
 test('paste data image with paste_data_images: false', function() {
 	editor.setContent('');
 
-	editor.execCommand('mceInsertClipboardContent', false, {content: '<img src="data:image/png;base64,...">'});
+	editor.execCommand('mceInsertClipboardContent', false, {content: '<img src="data:image/gif;base64,R0lGODlhAQABAPAAAP8REf///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">'});
 	equal(editor.getContent(), '');
 
-	editor.execCommand('mceInsertClipboardContent', false, {content: '<img alt="alt" src="data:image/png;base64,...">'});
+	editor.execCommand('mceInsertClipboardContent', false, {content: '<img alt="alt" src="data:image/gif;base64,R0lGODlhAQABAPAAAP8REf///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">'});
 	equal(editor.getContent(), '');
 });
 
@@ -481,9 +545,9 @@ test('paste data image with paste_data_images: true', function() {
 	editor.settings.paste_data_images = true;
 
 	editor.setContent('');
-	editor.execCommand('mceInsertClipboardContent', false, {content: '<img src="data:image/png;base64,...">'});
+	editor.execCommand('mceInsertClipboardContent', false, {content: '<img src="data:image/gif;base64,R0lGODlhAQABAPAAAP8REf///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==">'});
 
-	equal(editor.getContent(), '<p><img src="data:image/png;base64,..." alt="" /></p>');
+	equal(editor.getContent(), '<p><img src="data:image/gif;base64,R0lGODlhAQABAPAAAP8REf///yH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==" alt="" /></p>');
 });
 
 test('paste pre process text (event)', function() {
@@ -634,7 +698,7 @@ if (tinymce.Env.webkit) {
 		editor.execCommand('mceInsertClipboardContent', false, {content: '<span class="c" style="color:red; text-indent: 10px" title="t">Test</span>'});
 		equal(editor.getContent(), '<p><span class="c" title="t">Test</span></p>');
 	});
-	
+
 	test('paste webkit remove runtime styles (background-color)', function() {
 		editor.settings.paste_webkit_styles = 'background-color';
 		editor.setContent('');

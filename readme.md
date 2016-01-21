@@ -5,57 +5,57 @@ Building TinyMCE
 -----------------
 1. Install Node.js
 2. Open a console and go to the project directory
-3. Write "npm i -g jake" to install the jake tool globally.
-4. Write "npm i" to install all package dependencies
-4. Build TinyMCE by writing "jake"
+3. Write "npm i -g grunt-cli" to install the grunt command line tool globally.
+4. Write "npm i" to install all package dependencies.
+4. Build TinyMCE by writing "grunt"
 
 Build tasks
 ------------
-`jake`
-Runs the minifyjs, less, jshint build tasks.
+`grunt`
+Lints, minified, unit tests and creates release packages for TinyMCE.
 
-`jake -T`
-List all build tasks.
+`grunt minify`
+Minifies all JS and CSS files.
 
-`jake minify`
-Compiles the core classes, plugins and themes into minified versions.
+`grunt test`
+Runs all qunit tests on PhantomJS.
 
-`jake less`
-Compiles all LESS based skins into css files that can be included in the browser.
+`grunt lint`
+Runs all source files though various JS linters.
 
-`jake jshint`
-Runs all js code though jshint.
+`grunt sc-test`
+Runs all qunit tests on Saucelabs.
 
-`jake eslint`
-Runs all js code though eslint.
+`grunt watch`
+Watches for source code changes and triggers rebuilds and linting.
 
-`jake release`
-Builds release packages with the version specified in changelog.txt.
+`grunt --help`
+Displays the various build tasks.
 
-`jake bundle[themes:*]`
-Bundles all themes into the tinymce core js files.
-
-`jake bundle[plugins:*]`
-Bundles all plugins into the tinymce core js files.
-
-`jake phantomjs-tests`
-Runs all qunit tests in a headless WebKit.
-
-Bundle themes and plugins into core example
--------------------------------------------
-`jake minify bundle[themes:modern,plugins:table,paste]`
+Bundle themes and plugins into a single file
+---------------------------------------------
+`grunt bundle --themes modern --plugins table,paste`
 Minifies the core, adds the modern theme and adds the table and paste plugin into tinymce.min.js.
-
-Run code coverage on TinyMCE core
-----------------------------------
-`jake minify-core[coverage]`
-Compiles the core classes with jscoverage data.
-
-Run the unit tests on the minified TinyMCE core and click the coverage report button.
-`tests/index.html?min=true`
 
 Contributing to the TinyMCE project
 ------------------------------------
-You can read more about how to contribute to this project at [http://www.tinymce.com/develop/contributing.php](http://www.tinymce.com/develop/contributing.php)
+TinyMCE is an open source software project and we encourage developers to contribute patches and code for us to include in the main package of TinyMCE.
+
+__Basic Rules__
+
+* Contributed code will be licensed under the LGPL license but not limited to LGPL.
+* Copyright notices will be changed to Ephox Corporation, contributors will get credit for their work.
+* All third party code will be reviewed, tested and possibly modified before being released.
+* All contributors will have to have signed the Contributor License Agreement.
+
+These basic rules ensures that the contributed code remains open source and under the LGPL license.
+
+__How to Contribute__
+
+The TinyMCE source code is [hosted on Github](http://github.com/tinymce/tinymce). Through Github you can submit pull requests and log new bugs and feature requests.
+
+When you submit a pull request, you will get a notice about signing the __Contributors License Agreement (CLA)__.
+You should have a __valid email address on your GitHub account__, and you will be sent a key to verify your identity and digitally sign the agreement.
+After you signed your pull request will automatically be ready for review & merge.
 
 [![Build Status](https://travis-ci.org/tinymce/tinymce.png?branch=master)](https://travis-ci.org/tinymce/tinymce)

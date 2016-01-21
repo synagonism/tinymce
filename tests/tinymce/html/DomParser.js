@@ -306,7 +306,7 @@
 		parser = new tinymce.html.DomParser({}, new tinymce.html.Schema({valid_elements: 'span,a[name],img'}));
 		root = parser.parse('<span></span><a name="anchor"></a>');
 		equal(serializer.serialize(root), '<span></span><a name="anchor"></a>', 'Leave a with name attribute');
-		
+
 		parser = new tinymce.html.DomParser({}, new tinymce.html.Schema({valid_elements: 'span,a[href],img[src]'}));
 		root = parser.parse('<span></span><a href="#"><img src="about:blank" /></a>');
 		equal(serializer.serialize(root), '<span></span><a href="#"><img src="about:blank" /></a>', 'Leave elements with img in it');
@@ -498,8 +498,45 @@
 		var parser, root, schema = new tinymce.html.Schema({valid_classes: {'*': 'classA classB', 'strong': 'classC'}});
 
 		parser = new tinymce.html.DomParser({}, schema);
-		root = parser.parse('<p class="classA classB classC"><strong class="classA classB classC">a</strong></p>');
-		equal(serializer.serialize(root), '<p class="classA classB"><strong class="classA classB">a</strong></p>');
+		root = parser.parse('<p class="classA classB classC"><strong class="classA classB classC classD">a</strong></p>');
+		equal(serializer.serialize(root), '<p class="classA classB"><strong class="classA classB classC">a</strong></p>');
+	});
+
+	test('Remove empty list blocks', function() {
+		var parser, root, schema = new tinymce.html.Schema();
+
+		parser = new tinymce.html.DomParser({}, schema);
+		root = parser.parse('<ul><li></li></ul><ul><li> </li></ul>');
+		equal(serializer.serialize(root), '');
+	});
+
+	test('Preserve space in inline span', function() {
+		var parser, root, schema = new tinymce.html.Schema();
+
+		parser = new tinymce.html.DomParser({}, schema);
+		root = parser.parse('a<span> </span>b');
+		equal(serializer.serialize(root), 'a b');
+	});
+
+	test('Bug #7543 removes whitespace between bogus elements before a block', function() {
+		var serializer = new tinymce.html.Serializer();
+
+		equal(
+			serializer.serialize(new tinymce.html.DomParser().parse(
+				'<div><b data-mce-bogus="1">a</b> <b data-mce-bogus="1">b</b><p>c</p></div>')
+			),
+			'<div>a b<p>c</p></div>'
+		);
+	});
+
+	test('Bug #7582 removes whitespace between bogus elements before a block', function() {
+		var serializer = new tinymce.html.Serializer();
+
+		equal(
+			serializer.serialize(new tinymce.html.DomParser().parse(
+				'<div>1 <span data-mce-bogus="1">2</span><div>3</div></div>')
+			),
+			'<div>1 2<div>3</div></div>'
+		);
 	});
 })();
-

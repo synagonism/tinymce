@@ -7,7 +7,9 @@ module("tinymce.plugins.Media", {
 			add_unload_trigger: false,
 			skin: false,
 			plugins: 'media',
+			live_embeds: false,
 			document_base_url: '/tinymce/tinymce/trunk/tests/',
+			extended_valid_elements: 'script[src|type]',
 			media_scripts: [
 				{filter: 'http://media1.tinymce.com'},
 				{filter: 'http://media2.tinymce.com', width: 100, height: 200}
@@ -17,7 +19,46 @@ module("tinymce.plugins.Media", {
 				QUnit.start();
 			}
 		});
+	},
+
+	teardown: function() {
+		delete editor.settings.media_filter_html;
+		delete editor.settings.media_live_embeds;
 	}
+});
+
+function fillAndSubmitWindowForm(data) {
+	var win = Utils.getFrontmostWindow();
+
+	win.fromJSON(data);
+	win.find('form')[0].submit();
+	win.close();
+}
+
+test('Default media dialog on empty editor', function() {
+	editor.settings.media_live_embeds = false;
+
+	editor.setContent('');
+	editor.plugins.media.showDialog();
+
+	deepEqual(Utils.getFrontmostWindow().toJSON(), {
+		constrain: true,
+		embed: "",
+		height: "",
+		poster: "",
+		source1: "",
+		source2: "",
+		width: ""
+	});
+
+	fillAndSubmitWindowForm({
+		"source1": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+	});
+
+	equal(
+		editor.getContent(),
+		'<p><iframe src=\"//www.youtube.com/embed/dQw4w9WgXcQ\" width=\"560\" height=\"314\" allowfullscreen=\"allowfullscreen\"></iframe></p>'
+	);
 });
 
 test("Object retain as is", function() {
@@ -31,8 +72,8 @@ test("Object retain as is", function() {
 
 	equal(editor.getContent(),
 		'<p><object width="425" height="355" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">' +
-			'<param name="movie" value="someurl">' +
-			'<param name="wmode" value="transparent">' +
+			'<param name="movie" value="someurl" />' +
+			'<param name="wmode" value="transparent" />' +
 			'<embed src="someurl" type="application/x-shockwave-flash" wmode="transparent" width="425" height="355" />' +
 		'</object></p>'
 	);
@@ -82,8 +123,8 @@ test("Audio retain as is", function() {
 	equal(editor.getContent(),
 		'<p>' +
 			'<audio src="sound.mp3">' +
-				'<track kind="captions" src="foo.en.vtt" srclang="en" label="English">' +
-				'<track kind="captions" src="foo.sv.vtt" srclang="sv" label="Svenska">' +
+				'<track kind="captions" src="foo.en.vtt" srclang="en" label="English" />' +
+				'<track kind="captions" src="foo.sv.vtt" srclang="sv" label="Svenska" />' +
 				'text<a href="#">link</a>' +
 			'</audio>' +
 		'</p>'
@@ -107,6 +148,7 @@ test("Resize complex object", function() {
 	placeholderElm.width = 100;
 	placeholderElm.height = 200;
 	editor.fire('objectResized', {target: placeholderElm, width: placeholderElm.width, height: placeholderElm.height});
+	editor.settings.media_filter_html = false;
 
 	equal(editor.getContent(),
 		'<p>' +
@@ -127,8 +169,8 @@ test("Resize complex object", function() {
 
 test("Media script elements", function() {
 	editor.setContent(
-		'<script src="http://media1.tinymce.com/123456"></sc'+'ript>' +
-		'<script src="http://media2.tinymce.com/123456"></sc'+'ript>'
+		'<script src="http://media1.tinymce.com/123456"></sc' + 'ript>' +
+		'<script src="http://media2.tinymce.com/123456"></sc' + 'ript>'
 	);
 
 	equal(editor.getBody().getElementsByTagName('img')[0].className, 'mce-object mce-object-script');
@@ -140,8 +182,24 @@ test("Media script elements", function() {
 
 	equal(editor.getContent(),
 		'<p>\n' +
-			'<script src="http://media1.tinymce.com/123456" type="text/javascript"></sc'+'ript>\n' +
-			'<script src="http://media2.tinymce.com/123456" type="text/javascript"></sc'+'ript>\n' +
+			'<script src="http://media1.tinymce.com/123456" type="text/javascript"></sc' + 'ript>\n' +
+			'<script src="http://media2.tinymce.com/123456" type="text/javascript"></sc' + 'ript>\n' +
 		'</p>'
 	);
+});
+
+test("XSS content", function() {
+	function testXss(input, expectedOutput) {
+		editor.setContent(input);
+		equal(editor.getContent(), expectedOutput);
+	}
+
+	testXss('<video><a href="javascript:alert(1);">a</a></video>', '<p><video width="300" height="150"><a>a</a></video></p>');
+	testXss('<video><img src="x" onload="alert(1)"></video>', '<p><video width="300" height=\"150\"></video></p>');
+	testXss('<video><img src="x"></video>', '<p><video width="300" height="150"><img src="x" /></video></p>');
+	testXss('<video><!--[if IE]><img src="x"><![endif]--></video>', '<p><video width="300" height="150"><!-- [if IE]><img src="x"><![endif]--></video></p>');
+	testXss('<p><p><audio><audio src=x onerror=alert(1)>', '<p><audio></audio></p>');
+	testXss('<p><html><audio><br /><audio src=x onerror=alert(1)></p>', '');
+	testXss('<p><audio><img src="javascript:alert(1)"></audio>', '<p><audio><img /></audio></p>');
+	testXss('<p><audio><img src="x" style="behavior:url(x); width: 1px"></audio>', '<p><audio><img src="x" style="width: 1px;" /></audio></p>');
 });

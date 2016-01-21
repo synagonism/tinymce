@@ -1,8 +1,8 @@
 /**
  * FocusManager.js
  *
- * Copyright, Moxiecode Systems AB
  * Released under LGPL License.
+ * Copyright (c) 1999-2015 Ephox Corp. All rights reserved
  *
  * License: http://www.tinymce.com/license
  * Contributing: http://www.tinymce.com/contributing
@@ -19,8 +19,9 @@
  */
 define("tinymce/FocusManager", [
 	"tinymce/dom/DOMUtils",
+	"tinymce/util/Delay",
 	"tinymce/Env"
-], function(DOMUtils, Env) {
+], function(DOMUtils, Delay, Env) {
 	var selectionChangeHandler, documentFocusInHandler, documentMouseUpHandler, DOM = DOMUtils.DOM;
 
 	/**
@@ -86,7 +87,11 @@ define("tinymce/FocusManager", [
 				if (editor.inline || Env.ie) {
 					// Use the onbeforedeactivate event when available since it works better see #7023
 					if ("onbeforedeactivate" in document && Env.ie < 9) {
-						editor.dom.bind(editor.getBody(), 'beforedeactivate', function() {
+						editor.dom.bind(editor.getBody(), 'beforedeactivate', function(e) {
+							if (e.target != editor.getBody()) {
+								return;
+							}
+
 							try {
 								editor.lastRng = editor.selection.getRng();
 							} catch (ex) {
@@ -145,11 +150,12 @@ define("tinymce/FocusManager", [
 			});
 
 			editor.on('focusin', function() {
-				var focusedEditor = editorManager.focusedEditor;
+				var focusedEditor = editorManager.focusedEditor, lastRng;
 
 				if (editor.selection.lastFocusBookmark) {
-					editor.selection.setRng(bookmarkToRng(editor, editor.selection.lastFocusBookmark));
+					lastRng = bookmarkToRng(editor, editor.selection.lastFocusBookmark);
 					editor.selection.lastFocusBookmark = null;
+					editor.selection.setRng(lastRng);
 				}
 
 				if (focusedEditor != editor) {
@@ -167,10 +173,10 @@ define("tinymce/FocusManager", [
 			});
 
 			editor.on('focusout', function() {
-				window.setTimeout(function() {
+				Delay.setEditorTimeout(editor, function() {
 					var focusedEditor = editorManager.focusedEditor;
 
-					// Still the same editor the the blur was outside any editor UI
+					// Still the same editor the blur was outside any editor UI
 					if (!isUIElement(getActiveElement()) && focusedEditor == editor) {
 						editor.fire('blur', {focusedEditor: null});
 						editorManager.focusedEditor = null;
@@ -180,7 +186,7 @@ define("tinymce/FocusManager", [
 							editor.selection.lastFocusBookmark = null;
 						}
 					}
-				}, 0);
+				});
 			});
 
 			// Check if focus is moved to an element outside the active editor by checking if the target node
@@ -197,7 +203,7 @@ define("tinymce/FocusManager", [
 						}
 
 						// Fire a blur event if the element isn't a UI element
-						if (!isUIElement(e.target) && editorManager.focusedEditor == activeEditor) {
+						if (e.target != document.body && !isUIElement(e.target) && editorManager.focusedEditor == activeEditor) {
 							activeEditor.fire('blur', {focusedEditor: null});
 							editorManager.focusedEditor = null;
 						}
